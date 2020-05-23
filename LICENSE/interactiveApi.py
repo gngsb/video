@@ -169,9 +169,9 @@ def signin_form():
     user = session.query(v_type).filter().all()
     # 打印类型和对象的name属性:
     # print('type:', type(user))
-    print(user)
+    # print(user)
     types = json.dumps(user, default=v_typedict,ensure_ascii=False)
-    print(types)
+    # print(types)
     return types
 
 @app.route('/getList', methods=['GET'])
@@ -354,7 +354,7 @@ def AddImage():
         'code': 0,
         'msg': '上传图片成功'
     }
-    print(type(res))
+    # print(type(res))
     return json.dumps(res)
 
 
