@@ -224,14 +224,18 @@ def AddImage():
     img = request.files.get('file')
      #转bytes类型
     pic = img.read()
+    sufix = os.path.splitext(img.filename)[1]
  
     # 生成 随机文件名字
-    now_time = datetime.now().strftime('%Y%m%d%H%M%S')
+    now_time = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
     random_str = "%06d" % random.randint(0, 999999)
     name = now_time + random_str
  
-    fname = "{}.png".format(name)
+    fname = "{}".format(name)+sufix
+    dir = os.path.join(os.path.abspath('.'), 'goods_image')
     try:
+        if(not os.path.exists(dir)):
+            os.mkdir(dir)
         with open(os.path.join(os.path.abspath('.'), 'goods_image', fname), 'wb') as f:
             f.write(pic)
  
@@ -239,16 +243,17 @@ def AddImage():
  
     except Exception as e:
         res = {
-            'code': 'ERR_SERVER',
+            'code': 200,
             'msg': '保存图片失败'
         }
  
     res = {
-        'pic_path': pic_path,
+        'image': pic_path,
         'code': 0,
         'msg': '上传图片成功'
     }
-    pass
+    print(type(res))
+    return json.dumps(res)
 
 
 @app.route('/signin', methods=['POST'])
