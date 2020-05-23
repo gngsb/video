@@ -138,11 +138,11 @@ def v_videoListdict(std):
         return {
             'id': std.Id,
             'name': std.Name,
-            'Cid': std.Cid,
+            'cid': std.Cid,
             'createTime': std.CreateTime,
             'ModifyTime': std.ModifyTime,
-            'TypeId': std.TypeId,
-            'ImgUrl': std.ImgUrl,
+            'typeId': std.TypeId,
+            'imgUrl': std.ImgUrl,
             'remarks': std.Remarks,
             'typeName':std.TypeName,
             'title':std.Title
@@ -151,7 +151,8 @@ def v_videoListdict(std):
 # 初始化数据库连接:
 engine = create_engine('mysql+mysqlconnector://root:cdUsr@2020.@116.196.75.200:3306/video')
 # 创建DBSession类型:
-DBSession = sessionmaker(bind=engine)
+# autocommit：是否自动提交，改为true可以防止发生(sqlalchemy.exc.InvalidRequestError) Can't reconnect until invalid transaction is rolled back错误，但会无法提交事务
+DBSession = sessionmaker(bind=engine,autocommit=False) 
 
 # 创建Session:
 session = DBSession()
@@ -195,28 +196,129 @@ def GetVideo():# page,limit,Name='',CId='',TypeId=''
     CId = request.args.get('CId')
     TypeId = request.args.get('TypeId')
 
-    # page = request.form['page']
-    # limit = request.form['limit']
-    # Name = request.form['Name']
-    # CId = request.form['CId']
-    # TypeId = request.form['TypeId']
-    video = session.query(v_videoList)
-    if Name:
-        video = video.filter(v_videoList.Name.like("%{0}%".format(Name)))
-    if CId:
-        video = video.filter(v_videoList.Cid==CId)
-    if TypeId:
-        video = video.filter(v_videoList.TypeId==TypeId)
-    video = video.limit(limit).offset((int(page)-1)*int(limit)).all()
-    # print('type:', type(video))
-    # for n in video:
-    #     print(type(n))
-    # types = json.dumps(video, default=v_videoListdict,ensure_ascii=False)
-    count = session.query(v_videoList).count()
-    lists = Lists('0','',count,video)
-    types = json.dumps(lists, default=json_default,ensure_ascii=False)
-    # print(types)
-    return types
+    try:
+        session.rollback()
+        video = session.query(v_videoList)
+        if Name:
+            video = video.filter(v_videoList.Name.like("%{0}%".format(Name)))
+        if CId:
+            video = video.filter(v_videoList.Cid==CId)
+        if TypeId:
+            video = video.filter(v_videoList.TypeId==TypeId)
+        video = video.limit(limit).offset((int(page)-1)*int(limit)).all()
+        # print('type:', type(video))
+        # for n in video:
+        #     print(type(n))
+        # types = json.dumps(video, default=v_videoListdict,ensure_ascii=False)
+        count = session.query(v_videoList).count()
+        lists = Lists('0','',count,video)
+        types = json.dumps(lists, default=json_default,ensure_ascii=False)
+        # print(types)
+        return types
+    except Exception as e:
+        session.rollback()
+        pass
+
+    
+
+# 新增视频信息
+@app.route('/AddVideo',methods=['GET', 'POST'])
+def AddVideo():
+    Name = request.form['Name']
+    Cid = request.form['Cid']
+    TypeId = request.form['TypeId']
+    ImgUrl = request.form['ImgUrl']
+    Remarks = request.form['Remarks']
+    try:
+        # 保存一条数据
+        new_video = v_videos(
+            Name = Name,
+            Cid = Cid,
+            CreateTime = datetime.datetime.now(),
+            TypeId = TypeId,
+            ImgUrl = ImgUrl,
+            Remarks = Remarks
+            )
+        session.add(new_video)
+        session.commit()
+        res = {
+            'code': 0,
+            'msg': '上传成功'
+        }
+    except Exception as e:
+        res = {
+            'code': 200,
+            'msg': '上传失败'
+        }
+    return json.dumps(res)
+
+# 查询视频信息
+@app.route('/SelectVideo',methods=['GET', 'POST'])
+def SelectVideo():
+    Vid = request.args.get("Vid")
+    try:
+        session.rollback()
+        video = session.query(v_videoList).filter(v_videoList.Id==Vid).one()
+        types = json.dumps(video, default=v_videoListdict,ensure_ascii=False)
+        # print(types)
+        return types
+    except Exception as e:
+        session.rollback()
+        pass
+
+# 编辑保存
+@app.route('/EditVideo',methods=['GET', 'POST'])
+def EditVideo():
+    Vid = request.form['Vid']
+    Name = request.form['Name']
+    Cid = request.form['Cid']
+    TypeId = request.form['TypeId']
+    ImgUrl = request.form['ImgUrl']
+    Remarks = request.form['Remarks']
+    try:
+        session.rollback()
+        video = session.query(v_videos).filter(v_videos.Id==Vid).one()
+        video.Name = Name
+        video.Cid = Cid
+        video.ModifyTime = datetime.datetime.now()
+        video.TypeId = TypeId
+        video.ImgUrl = ImgUrl
+        video.Remarks = Remarks
+        session.commit()
+        res = {
+            'code': 0,
+            'msg': '修改成功'
+        }
+        
+    except Exception as e:
+        res = {
+            'code': 200,
+            'msg': '修改失败'
+        }
+    return json.dumps(res)
+
+
+# 删除视频
+@app.route('/DeleteVideo',methods=['GET', 'POST'])
+def DeleteVideo():
+    Vid = request.args.get("Vid")
+    try:
+        session.rollback()
+        video = session.query(v_videos).filter(v_videos.Id==Vid).one()
+        session.delete(video)
+        session.commit()
+        res = {
+            'code': 0,
+            'msg': '删除成功'
+        }
+        
+    except Exception as e:
+        res = {
+            'code': 200,
+            'msg': '删除失败'
+        }
+    return json.dumps(res)
+
 
 # 实现图片上传
 @app.route('/AddImage',methods=['GET', 'POST'])
