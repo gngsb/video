@@ -176,6 +176,7 @@ def signin_form():
 
 @app.route('/getList', methods=['GET'])
 def getList():
+    session.rollback()
     # 创建Query查询，filter是where条件，最后调用one()返回唯一行，如果调用all()则返回所有行:
     user = session.query(v_countries).filter().all()
     # 打印类型和对象的name属性:
@@ -341,7 +342,7 @@ def AddImage():
         with open(os.path.join(os.path.abspath('.'), 'goods_image', fname), 'wb') as f:
             f.write(pic)
  
-        pic_path = os.path.join(os.path.abspath('.'), 'goods_image', fname) # os.path.abspath('.') + '\goods_image\' + fname
+        pic_path = os.path.join('..', 'goods_image', fname) # os.path.abspath('.') + '\goods_image\' + fname
  
     except Exception as e:
         res = {
