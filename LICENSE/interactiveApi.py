@@ -341,7 +341,7 @@ def AddImage():
         with open(os.path.join(os.path.abspath('.'), 'goods_image', fname), 'wb') as f:
             f.write(pic)
  
-        pic_path = os.path.abspath('.') + '/goods_image/' + fname
+        pic_path = os.path.join(os.path.abspath('.'), 'goods_image', fname) # os.path.abspath('.') + '\goods_image\' + fname
  
     except Exception as e:
         res = {
