@@ -54,6 +54,7 @@ class v_videos(Base):
     TypeId = Column(Integer)
     ImgUrl = Column(String(500))
     Remarks = Column(String(500))
+    Type = Column(Integer)
 
 class v_videoList(Base):
     # 表的名字:
@@ -163,28 +164,39 @@ session = DBSession()
 def home():
     return '<h1>Home</h1>'
 
-@app.route('/getType', methods=['GET'])
+@app.route('/getType', methods=['GET', 'POST'])
 def signin_form():
-    # 创建Query查询，filter是where条件，最后调用one()返回唯一行，如果调用all()则返回所有行:
-    user = session.query(v_type).filter().all()
-    # 打印类型和对象的name属性:
-    # print('type:', type(user))
-    # print(user)
-    types = json.dumps(user, default=v_typedict,ensure_ascii=False)
-    # print(types)
-    return types
+    
+    try:
+        # 创建Query查询，filter是where条件，最后调用one()返回唯一行，如果调用all()则返回所有行:
+        user = session.query(v_type).filter().all()
+        # 打印类型和对象的name属性:
+        # print('type:', type(user))
+        # print(user)
+        types = json.dumps(user, default=v_typedict,ensure_ascii=False)
+        # print(types)
+        return types
+    except Exception as e:
+        session.rollback()
+        pass
+    
 
-@app.route('/getList', methods=['GET'])
+@app.route('/getList', methods=['GET', 'POST'])
 def getList():
-    session.rollback()
-    # 创建Query查询，filter是where条件，最后调用one()返回唯一行，如果调用all()则返回所有行:
-    user = session.query(v_countries).filter().all()
-    # 打印类型和对象的name属性:
-    # print('type:', type(user))
-    # print(user)
-    types = json.dumps(user, default=v_countriesdict,ensure_ascii=False)
-    # print(types)
-    return types
+
+    try:
+        # 创建Query查询，filter是where条件，最后调用one()返回唯一行，如果调用all()则返回所有行:
+        user = session.query(v_countries).filter().all()
+        # 打印类型和对象的name属性:
+        # print('type:', type(user))
+        # print(user)
+        types = json.dumps(user, default=v_countriesdict,ensure_ascii=False)
+        # print(types)
+        return types
+    except Exception as e:
+        session.rollback()
+        pass
+
 
 # 获取视频信息列表
 @app.route('/GetVideo/',methods=['GET', 'POST'])
@@ -238,7 +250,8 @@ def AddVideo():
             CreateTime = datetime.datetime.now(),
             TypeId = TypeId,
             ImgUrl = ImgUrl,
-            Remarks = Remarks
+            Remarks = Remarks,
+            Type = 1
             )
         session.add(new_video)
         session.commit()
@@ -306,7 +319,8 @@ def DeleteVideo():
     try:
         session.rollback()
         video = session.query(v_videos).filter(v_videos.Id==Vid).one()
-        session.delete(video)
+        # session.delete(video)
+        video.Type = 0
         session.commit()
         res = {
             'code': 0,
